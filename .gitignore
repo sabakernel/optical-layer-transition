@@ -1,0 +1,15 @@
+# Vite build output
+dist/
+.vite/
+coverage/
+
+# Local dependencies
+node_modules/
+vendor/
+
+# Local environment files
+.env
+.env.*
+!.env.example
+
+/docs/
