@@ -5,8 +5,9 @@ export default defineConfig({
   plugins: [react()],
   resolve: {
     alias: {
-      "@sabakernel/gl-noise-transition": new URL("../mod.ts", import.meta.url)
-        .pathname,
+      "@sabakernel/optical-layer-transitionn":
+        new URL("../mod.ts", import.meta.url)
+          .pathname,
     },
   },
 });
