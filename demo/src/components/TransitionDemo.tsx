@@ -1,9 +1,9 @@
 import { useEffect, useRef, useState } from "react";
-import { OpticalTransition } from "@sabakernel/optical-layer-transitionn";
+import { OpticalTransition } from "@sabakernel/optical-layer-transition";
 import type {
   ImageLayer,
   LayerImage,
-} from "@sabakernel/optical-layer-transitionn";
+} from "@sabakernel/optical-layer-transition";
 
 type SampleImage = {
   name: string;
