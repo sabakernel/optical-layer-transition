@@ -9,7 +9,7 @@
  *
  * @example
  * ```ts
- * import { OpticalTransition } from "@sabakernel/optical-transition";
+ * import { OpticalTransition } from "@sabakernel/optical-layer-transition";
  *
  * const canvas = document.querySelector<HTMLCanvasElement>('#canvas')!;
  * const transition = new OpticalTransition({

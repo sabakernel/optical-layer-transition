@@ -1,6 +1,6 @@
 {
   "name": "@sabakernel/optical-layer-transition",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "exports": "./mod.ts",
   "workspace": ["./demo"],
   "publish": {
