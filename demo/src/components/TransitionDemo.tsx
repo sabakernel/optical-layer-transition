@@ -196,7 +196,9 @@ export default function TransitionDemo() {
       setIsPlaying(playback.isPlaying);
       setIsFinished(playback.isFinished);
       if (isPlaying) {
-        setQueueNotice("Layer added to queue. Will play after current transition.");
+        setQueueNotice(
+          "Layer added to queue. Will play after current transition.",
+        );
       } else {
         setQueueNotice("Layer added to the playback queue.");
       }

@@ -82,7 +82,9 @@ Deno.test("a layer composites multiple positioned images and transitions as one 
     rect: () => {},
     clip: () => {},
     fillRect: () => {},
-    set fillStyle(_value: string) {},
+    set fillStyle(_value: string) {
+      // Intentionally ignored in tests; fillStyle is not used by the transition logic.
+    },
   };
   const canvas = {
     width: 0,

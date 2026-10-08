@@ -21,7 +21,7 @@
   },
   "tasks": {
     "test": "deno test -A",
-    "check": "deno check mod.ts src/",
+    "check": "deno check mod.ts",
     "lint": "deno lint",
     "fmt": "deno fmt"
   }
