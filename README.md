@@ -66,7 +66,7 @@ deno task preview  # ビルド結果のプレビュー
 ## 使い方
 
 ```ts
-import { OpticalTransition } from "@sabakernel/gl-noise-transition";
+import { OpticalTransition } from "@sabakernel/optical-layer-transitionn";
 
 const canvas = document.querySelector("canvas")!;
 const transition = new OpticalTransition({

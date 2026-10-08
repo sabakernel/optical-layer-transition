@@ -1,6 +1,9 @@
 import { useEffect, useRef, useState } from "react";
-import { OpticalTransition } from "@sabakernel/gl-noise-transition";
-import type { ImageLayer, LayerImage } from "@sabakernel/gl-noise-transition";
+import { OpticalTransition } from "@sabakernel/optical-layer-transitionn";
+import type {
+  ImageLayer,
+  LayerImage,
+} from "@sabakernel/optical-layer-transitionn";
 
 type SampleImage = {
   name: string;

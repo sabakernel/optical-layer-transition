@@ -5,7 +5,7 @@
     "react-dom": "npm:react-dom@^18",
     "react/jsx-runtime": "npm:react@^18/jsx-runtime",
     "@vitejs/plugin-react": "npm:@vitejs/plugin-react@^4",
-    "@sabakernel/gl-noise-transition": "../mod.ts"
+    "@sabakernel/optical-layer-transitionn": "../mod.ts"
   },
   "compilerOptions": {
     "lib": ["deno.ns", "dom", "dom.iterable", "dom.asynciterable"],
