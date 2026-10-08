@@ -5,7 +5,7 @@ export default defineConfig({
   plugins: [react()],
   resolve: {
     alias: {
-      "@sabakernel/optical-layer-transitionn":
+      "@sabakernel/optical-layer-transition":
         new URL("../mod.ts", import.meta.url)
           .pathname,
     },

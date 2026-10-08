@@ -1,5 +1,5 @@
 {
-  "name": "@sabakernel/optical-layer-transitionn",
+  "name": "@sabakernel/optical-layer-transition",
   "version": "1.0.0",
   "exports": "./mod.ts",
   "workspace": ["./demo"],
