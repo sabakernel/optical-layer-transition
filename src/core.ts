@@ -752,7 +752,6 @@ class CpuOpticalTransition implements TransitionBackend {
     if (this.isPlaying) this.startLoop();
   }
 
-
   /**
    * Completes any pending finish() promise.
    * @private
