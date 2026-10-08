@@ -11,15 +11,13 @@ import { TextureManager } from "./texture.ts";
  */
 interface TransitionBackend {
   setLayer(layer: ImageLayer): Promise<void>;
-  finish(): Promise<void>;
   replay(): void;
-  clear(): void;
+  clearLayers(): void;
   getLayers(): ImageLayer[];
   getPlaybackState(): {
     currentLayerIndex: number;
     nextLayerIndex: number | null;
     isPlaying: boolean;
-    isFinished: boolean;
   };
   setSize(width: number, height: number): void;
   play(): void;
@@ -39,7 +37,6 @@ class WebGLOpticalTransition implements TransitionBackend {
 
   // 内部状態管理
   private isPlaying: boolean = false;
-  private isFinished: boolean = false;
   private currentLayerIndex: number = 0;
   private completionPromise: Promise<void> | null = null;
   private resolveCompletion: (() => void) | null = null;
@@ -125,7 +122,6 @@ class WebGLOpticalTransition implements TransitionBackend {
   public async setLayer(layer: ImageLayer): Promise<void> {
     if (this.isDestroyed) return;
 
-    this.isFinished = false;
     this.layers.push(layer);
 
     try {
@@ -144,24 +140,47 @@ class WebGLOpticalTransition implements TransitionBackend {
   }
 
   /**
-   * Clears all layers and resets the renderer to its initial state.
+   * Clears all layers except the current (displayed) layer.
+   * Does NOT clear the canvas - the current image remains visible.
    */
-  public clear(): void {
+  public clearLayers(): void {
     this.pause();
-    this.isFinished = false;
-    this.currentLayerIndex = 0;
-    this.transitionStartTime = 0;
-    this.textureGeneration++;
-    this.layers = [];
-    for (const texture of this.layerTextures.values()) {
-      this.gl.deleteTexture(texture);
+
+    // Keep current displayed layer
+    if (this.currentLayerIndex < this.layers.length) {
+      const currentLayer = this.layers[this.currentLayerIndex];
+      const currentTexture = this.layerTextures.get(currentLayer);
+
+      // Delete all textures except current
+      for (const [layer, texture] of this.layerTextures.entries()) {
+        if (layer !== currentLayer) {
+          this.gl.deleteTexture(texture);
+        }
+      }
+      this.layerTextures.clear();
+
+      // Keep only current layer
+      this.layers = [currentLayer];
+      if (currentTexture) {
+        this.layerTextures.set(currentLayer, currentTexture);
+      }
+
+      this.currentLayerIndex = 0;
+      this.clearedLayerIndices.clear();
+      this.transitionStartTime = 0;
+    } else {
+      // No layers, full clear
+      for (const texture of this.layerTextures.values()) {
+        this.gl.deleteTexture(texture);
+      }
+      this.layerTextures.clear();
+      this.layers = [];
+      this.currentLayerIndex = 0;
+      this.transitionStartTime = 0;
     }
-    this.layerTextures.clear();
-    this.clearedLayerIndices.clear();
-    this.textureManager.clear(this.gl);
-    this.gl.clearColor(0.0, 0.0, 0.0, 0.0);
-    this.gl.clear(this.gl.COLOR_BUFFER_BIT);
+
     this.completeWaiter();
+    // Do NOT clear canvas - keep current image visible
   }
 
   public getLayers(): ImageLayer[] {
@@ -172,24 +191,16 @@ class WebGLOpticalTransition implements TransitionBackend {
     currentLayerIndex: number;
     nextLayerIndex: number | null;
     isPlaying: boolean;
-    isFinished: boolean;
   } {
     return {
       currentLayerIndex: this.currentLayerIndex,
-      nextLayerIndex: !this.isFinished &&
-          this.currentLayerIndex + 1 < this.layers.length
+      nextLayerIndex: this.currentLayerIndex + 1 < this.layers.length
         ? this.currentLayerIndex + 1
         : null,
       isPlaying: this.isPlaying,
-      isFinished: this.isFinished,
     };
   }
 
-  /**
-   * Creates a WebGL texture for a layer by compositing all of its images.
-   * @param layer Layer to create texture for
-   * @private
-   */
   /**
    * Creates a WebGL texture for a layer by compositing all of its images.
    * @param layer Layer to create texture for
@@ -249,9 +260,14 @@ class WebGLOpticalTransition implements TransitionBackend {
     }
   }
 
+  /**
+   * Starts playing the transition animation.
+   * Does nothing if already playing, finished, or if there are fewer than 2 layers.
+   * When isFinished=true, call setLayer() to start a new sequence.
+   */
   public play(): void {
     if (
-      this.isDestroyed || this.isPlaying || this.isFinished ||
+      this.isDestroyed || this.isPlaying ||
       this.layers.length < 2
     ) return;
 
@@ -273,48 +289,9 @@ class WebGLOpticalTransition implements TransitionBackend {
     this.clearedLayerIndices.clear();
     this.currentLayerIndex = 0;
     this.transitionStartTime = performance.now();
-    this.isFinished = false;
     this.isPlaying = this.layers.length > 1;
     this.renderFrame(this.transitionStartTime);
     if (this.isPlaying) this.startLoop();
-  }
-
-  public finish(): Promise<void> {
-    if (this.isDestroyed || this.isFinished || this.layers.length === 0) {
-      return Promise.resolve();
-    }
-    if (this.completionPromise) return this.completionPromise;
-
-    this.completionPromise = new Promise((resolve) => {
-      this.resolveCompletion = resolve;
-    });
-    const completion = this.completionPromise;
-
-    if (
-      this.layers.length === 1 ||
-      this.currentLayerIndex === this.layers.length - 1
-    ) {
-      if (!this.layerTextures.has(this.layers[this.currentLayerIndex])) {
-        if (!this.isPlaying) {
-          this.isPlaying = true;
-          this.transitionStartTime = performance.now();
-          this.startLoop();
-        }
-        return completion;
-      }
-      this.pause();
-      this.isFinished = true;
-      this.renderFrame(performance.now());
-      this.completeWaiter();
-      return completion;
-    }
-
-    if (!this.isPlaying) {
-      this.isPlaying = true;
-      this.transitionStartTime = performance.now();
-      this.startLoop();
-    }
-    return completion;
   }
 
   private completeWaiter(): void {
@@ -379,7 +356,7 @@ class WebGLOpticalTransition implements TransitionBackend {
       return;
     }
 
-    if (this.isFinished || !this.isPlaying) {
+    if (!this.isPlaying) {
       this.drawRetainedLayers(this.currentLayerIndex, nowMs);
       return;
     }
@@ -389,7 +366,6 @@ class WebGLOpticalTransition implements TransitionBackend {
     if (!targetLayer) {
       this.drawRetainedLayers(this.currentLayerIndex, nowMs);
       this.isPlaying = false;
-      this.isFinished = true;
       this.completeWaiter();
       return;
     }
@@ -414,12 +390,8 @@ class WebGLOpticalTransition implements TransitionBackend {
       this.transitionStartTime = nowMs;
       if (this.currentLayerIndex === this.layers.length - 1) {
         this.isPlaying = false;
-        this.isFinished = this.completionPromise !== null;
       }
       this.renderFrame(nowMs);
-      if (this.isFinished) {
-        this.completeWaiter();
-      }
     }
   }
 
@@ -567,7 +539,6 @@ class CpuOpticalTransition implements TransitionBackend {
   private clearedLayerIndices: Set<number> = new Set();
   private imageCache: Map<string, HTMLImageElement> = new Map();
   private isPlaying: boolean = false;
-  private isFinished: boolean = false;
   private currentLayerIndex: number = 0;
   private completionPromise: Promise<void> | null = null;
   private resolveCompletion: (() => void) | null = null;
@@ -606,7 +577,6 @@ class CpuOpticalTransition implements TransitionBackend {
   public async setLayer(layer: ImageLayer): Promise<void> {
     if (this.isDestroyed) return;
 
-    this.isFinished = false;
     this.layers.push(layer);
 
     try {
@@ -626,19 +596,39 @@ class CpuOpticalTransition implements TransitionBackend {
   }
 
   /**
-   * Clears all layers and resets the renderer to its initial state.
+   * Clears all layers except the current (displayed) layer.
+   * Does NOT clear the canvas - the current image remains visible.
    */
-  public clear(): void {
+  public clearLayers(): void {
     this.pause();
-    this.isFinished = false;
-    this.currentLayerIndex = 0;
-    this.transitionStartTime = 0;
-    this.layers = [];
-    this.compositeLayers.clear();
-    this.clearedLayerIndices.clear();
-    this.imageCache.clear();
-    this.ctx.clearRect(0, 0, this.width, this.height);
+
+    // Keep current displayed layer
+    if (this.currentLayerIndex < this.layers.length) {
+      const currentLayer = this.layers[this.currentLayerIndex];
+      const currentComposite = this.compositeLayers.get(currentLayer);
+
+      // Clear all composites except current
+      this.compositeLayers.clear();
+
+      // Keep only current layer
+      this.layers = [currentLayer];
+      if (currentComposite) {
+        this.compositeLayers.set(currentLayer, currentComposite);
+      }
+
+      this.currentLayerIndex = 0;
+      this.clearedLayerIndices.clear();
+      this.transitionStartTime = 0;
+    } else {
+      // No layers, full clear
+      this.layers = [];
+      this.compositeLayers.clear();
+      this.currentLayerIndex = 0;
+      this.transitionStartTime = 0;
+    }
+
     this.completeWaiter();
+    // Do NOT clear canvas - keep current image visible
   }
 
   /**
@@ -651,22 +641,19 @@ class CpuOpticalTransition implements TransitionBackend {
 
   /**
    * Gets the current playback state of the transition.
-   * @returns Object containing current layer index, next layer index, playing status, and finished status
+   * @returns Object containing current layer index, next layer index, and playing status
    */
   public getPlaybackState(): {
     currentLayerIndex: number;
     nextLayerIndex: number | null;
     isPlaying: boolean;
-    isFinished: boolean;
   } {
     return {
       currentLayerIndex: this.currentLayerIndex,
-      nextLayerIndex: !this.isFinished &&
-          this.currentLayerIndex + 1 < this.layers.length
+      nextLayerIndex: this.currentLayerIndex + 1 < this.layers.length
         ? this.currentLayerIndex + 1
         : null,
       isPlaying: this.isPlaying,
-      isFinished: this.isFinished,
     };
   }
 
@@ -729,11 +716,12 @@ class CpuOpticalTransition implements TransitionBackend {
 
   /**
    * Starts playing the transition animation.
-   * Does nothing if already playing, finished, or if there are fewer than 2 layers.
+   * Does nothing if already playing or if there are fewer than 2 layers.
+   * Resumes from the paused position if called after pause().
    */
   public play(): void {
     if (
-      this.isDestroyed || this.isPlaying || this.isFinished ||
+      this.isDestroyed || this.isPlaying ||
       this.layers.length < 2
     ) return;
 
@@ -759,48 +747,9 @@ class CpuOpticalTransition implements TransitionBackend {
     this.clearedLayerIndices.clear();
     this.currentLayerIndex = 0;
     this.transitionStartTime = performance.now();
-    this.isFinished = false;
     this.isPlaying = this.layers.length > 1;
     this.renderFrame(this.transitionStartTime);
     if (this.isPlaying) this.startLoop();
-  }
-
-  public finish(): Promise<void> {
-    if (this.isDestroyed || this.isFinished || this.layers.length === 0) {
-      return Promise.resolve();
-    }
-    if (this.completionPromise) return this.completionPromise;
-
-    this.completionPromise = new Promise((resolve) => {
-      this.resolveCompletion = resolve;
-    });
-    const completion = this.completionPromise;
-
-    if (
-      this.layers.length === 1 ||
-      this.currentLayerIndex === this.layers.length - 1
-    ) {
-      if (!this.compositeLayers.has(this.layers[this.currentLayerIndex])) {
-        if (!this.isPlaying) {
-          this.isPlaying = true;
-          this.transitionStartTime = performance.now();
-          this.startLoop();
-        }
-        return completion;
-      }
-      this.pause();
-      this.isFinished = true;
-      this.renderFrame(performance.now());
-      this.completeWaiter();
-      return completion;
-    }
-
-    if (!this.isPlaying) {
-      this.isPlaying = true;
-      this.transitionStartTime = performance.now();
-      this.startLoop();
-    }
-    return completion;
   }
 
   /**
@@ -959,7 +908,7 @@ class CpuOpticalTransition implements TransitionBackend {
       return;
     }
 
-    if (this.isFinished || !this.isPlaying) {
+    if (!this.isPlaying) {
       this.drawRetainedLayers(this.currentLayerIndex);
       return;
     }
@@ -969,7 +918,6 @@ class CpuOpticalTransition implements TransitionBackend {
     if (!targetLayer) {
       this.drawRetainedLayers(this.currentLayerIndex);
       this.isPlaying = false;
-      this.isFinished = true;
       this.completeWaiter();
       return;
     }
@@ -1012,12 +960,8 @@ class CpuOpticalTransition implements TransitionBackend {
       this.transitionStartTime = nowMs;
       if (this.currentLayerIndex === this.layers.length - 1) {
         this.isPlaying = false;
-        this.isFinished = this.completionPromise !== null;
       }
       this.renderFrame(nowMs);
-      if (this.isFinished) {
-        this.completeWaiter();
-      }
     }
   }
 
@@ -1103,21 +1047,12 @@ export class OpticalTransition implements TransitionBackend {
     await this.backend.setLayer(layer);
   }
 
-  /**
-   * Completes all pending transitions and advances to the final layer.
-   * Returns a promise that resolves when the final layer is fully rendered.
-   * @returns Promise that resolves when all transitions are complete
-   */
-  public async finish(): Promise<void> {
-    await this.backend.finish();
-  }
-
   public replay(): void {
     this.backend.replay();
   }
 
-  public clear(): void {
-    this.backend.clear();
+  public clearLayers(): void {
+    this.backend.clearLayers();
   }
 
   /**
@@ -1134,7 +1069,6 @@ export class OpticalTransition implements TransitionBackend {
     currentLayerIndex: number;
     nextLayerIndex: number | null;
     isPlaying: boolean;
-    isFinished: boolean;
   } {
     return this.backend.getPlaybackState();
   }
