@@ -32,9 +32,6 @@
  *
  * // Start the transition
  * transition.play();
- *
- * // Wait for completion
- * await transition.finish();
  * ```
  */
 

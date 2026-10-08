@@ -94,15 +94,13 @@ export default function TransitionDemo() {
   const [draftImages, setDraftImages] = useState<LayerImage[]>([]);
   const [mode, setMode] = useState<"webgl2" | "cpu">("webgl2");
   const [isPlaying, setIsPlaying] = useState(false);
-  const [isFinished, setIsFinished] = useState(false);
-  const [isFinishing, setIsFinishing] = useState(false);
   const [isAddingLayer, setIsAddingLayer] = useState(false);
   const [layers, setQueuedLayers] = useState<ImageLayer[]>([]);
   const [currentLayerIndex, setCurrentLayerIndex] = useState(0);
   const [nextLayerIndex, setNextLayerIndex] = useState<number | null>(null);
   const [error, setError] = useState("");
   const [queueNotice, setQueueNotice] = useState("");
-  const isWaitingAtEnd = !isPlaying && !isFinished && layers.length > 0 &&
+  const isWaitingAtEnd = !isPlaying && layers.length > 0 &&
     nextLayerIndex === null;
 
   useEffect(() => {
@@ -140,7 +138,6 @@ export default function TransitionDemo() {
       setCurrentLayerIndex(playback.currentLayerIndex);
       setNextLayerIndex(playback.nextLayerIndex);
       setIsPlaying(playback.isPlaying);
-      setIsFinished(playback.isFinished);
     }, 100);
 
     return () => {
@@ -161,7 +158,7 @@ export default function TransitionDemo() {
 
   const addImageToLayer = () => {
     const sample = samplesRef.current[selectedSample];
-    if (!sample || isFinishing || isAddingLayer) return;
+    if (!sample || isAddingLayer) return;
 
     setDraftImages((images) => [
       ...images,
@@ -177,7 +174,7 @@ export default function TransitionDemo() {
 
   const addLayerToPlaybackQueue = async () => {
     const renderer = rendererRef.current;
-    if (!renderer || draftImages.length === 0 || isFinishing) {
+    if (!renderer || draftImages.length === 0) {
       return;
     }
 
@@ -197,7 +194,6 @@ export default function TransitionDemo() {
       setCurrentLayerIndex(playback.currentLayerIndex);
       setNextLayerIndex(playback.nextLayerIndex);
       setIsPlaying(playback.isPlaying);
-      setIsFinished(playback.isFinished);
       if (isPlaying) {
         setQueueNotice(
           "Layer added to queue. Will play after current transition.",
@@ -224,31 +220,22 @@ export default function TransitionDemo() {
     setIsPlaying(false);
   };
 
-  const finish = async () => {
-    const renderer = rendererRef.current;
-    if (!renderer || layers.length === 0) return;
-
-    setError("");
-    setIsFinishing(true);
-    try {
-      await renderer.finish();
-      if (!renderer.getPlaybackState().isFinished) return;
-      setIsPlaying(false);
-      setIsFinished(true);
-    } catch (cause) {
-      setError(cause instanceof Error ? cause.message : "Unable to finish.");
-    } finally {
-      setIsFinishing(false);
-    }
-  };
-
-  const clear = () => {
-    rendererRef.current?.clear();
+  const clearKeepCurrent = () => {
+    rendererRef.current?.clearLayers();
     setQueuedLayers([]);
     setCurrentLayerIndex(0);
     setNextLayerIndex(null);
     setIsPlaying(false);
-    setIsFinished(false);
+    setError("");
+    setQueueNotice("");
+  };
+
+  const clear = () => {
+    rendererRef.current?.clearLayers();
+    setQueuedLayers([]);
+    setCurrentLayerIndex(0);
+    setNextLayerIndex(null);
+    setIsPlaying(false);
     setError("");
     setQueueNotice("");
   };
@@ -257,7 +244,6 @@ export default function TransitionDemo() {
     const renderer = rendererRef.current;
     renderer?.replay();
     const playback = renderer?.getPlaybackState();
-    setIsFinished(playback?.isFinished ?? false);
     setIsPlaying(playback?.isPlaying ?? false);
     setCurrentLayerIndex(playback?.currentLayerIndex ?? 0);
     setNextLayerIndex(playback?.nextLayerIndex ?? null);
@@ -342,7 +328,7 @@ export default function TransitionDemo() {
             className="secondary-button"
             type="button"
             onClick={addImageToLayer}
-            disabled={isFinishing || isAddingLayer || !!error}
+            disabled={isAddingLayer || !!error}
           >
             Add image to layer
           </button>
@@ -416,8 +402,7 @@ export default function TransitionDemo() {
             className="action-button"
             type="button"
             onClick={() => void addLayerToPlaybackQueue()}
-            disabled={draftImages.length === 0 || isFinishing ||
-              isAddingLayer || !!error}
+            disabled={draftImages.length === 0 || isAddingLayer || !!error}
           >
             {isAddingLayer
               ? "Compositing layer…"
@@ -432,7 +417,7 @@ export default function TransitionDemo() {
           {isWaitingAtEnd && (
             <p className="layer-count">
               Waiting at the end of the queue. Add another layer to continue, or
-              finish explicitly.
+              use clear to reset.
             </p>
           )}
           <p className="layer-count">
@@ -443,9 +428,7 @@ export default function TransitionDemo() {
               const isCurrentLayer = index === currentLayerIndex;
               const isNextLayer = index === nextLayerIndex;
               let status = "Waiting";
-              if (isFinished && isCurrentLayer) {
-                status = "Finished · displayed";
-              } else if (index < currentLayerIndex) {
+              if (index < currentLayerIndex) {
                 status = "Completed";
               } else if (isCurrentLayer) {
                 status = isPlaying ? "Current layer" : "Current";
@@ -491,9 +474,7 @@ export default function TransitionDemo() {
             className="action-button"
             type="button"
             onClick={play}
-            disabled={isPlaying || isFinishing || isFinished ||
-              isAddingLayer ||
-              nextLayerIndex === null}
+            disabled={isPlaying || isAddingLayer || nextLayerIndex === null}
           >
             Play
           </button>
@@ -501,24 +482,23 @@ export default function TransitionDemo() {
             className="secondary-button"
             type="button"
             onClick={pause}
-            disabled={!isPlaying || isFinishing || isAddingLayer}
+            disabled={!isPlaying || isAddingLayer}
           >
             Pause
           </button>
           <button
             className="secondary-button"
             type="button"
-            onClick={() => void finish()}
-            disabled={isFinishing || isFinished || isAddingLayer ||
-              layers.length === 0}
+            onClick={clearKeepCurrent}
+            disabled={isAddingLayer || layers.length === 0}
           >
-            {isFinishing ? "Finishing…" : "Finish and hold final image"}
+            Clear layers (keep current)
           </button>
           <button
             className="secondary-button"
             type="button"
             onClick={replay}
-            disabled={isFinishing || isAddingLayer || layers.length === 0}
+            disabled={isAddingLayer || layers.length === 0}
           >
             Replay from first layer
           </button>
@@ -526,7 +506,7 @@ export default function TransitionDemo() {
             className="secondary-button"
             type="button"
             onClick={clear}
-            disabled={isAddingLayer || (layers.length === 0 && !isFinished)}
+            disabled={isAddingLayer || layers.length === 0}
           >
             Clear playback queue
           </button>
