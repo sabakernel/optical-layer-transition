@@ -1,0 +1,34 @@
+{
+  "name": "@sabakernel/optical-layer-transition",
+  "version": "1.1.0",
+  "private": true,
+  "description": "WebGL2-powered optical layer transition renderer for progressive image updates",
+  "license": "MIT",
+  "type": "module",
+  "main": "./dist/mod.js",
+  "module": "./dist/mod.js",
+  "types": "./dist/mod.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/mod.d.ts",
+      "import": "./dist/mod.js",
+      "default": "./dist/mod.js"
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "tsdown",
+    "test": "vitest run",
+    "typecheck": "tsc --noEmit",
+    "publish:jsr:dry": "jsr publish --dry-run",
+    "publish:jsr": "jsr publish"
+  },
+  "devDependencies": {
+    "jsr": "^0.14.3",
+    "tsdown": "^0.23.7",
+    "typescript": "~5.9.3",
+    "vitest": "^5.1.1"
+  }
+}

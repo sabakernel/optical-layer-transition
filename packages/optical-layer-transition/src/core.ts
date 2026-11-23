@@ -2,9 +2,9 @@
  * Optical noise image transition renderer core module (OpticalTransition).
  */
 
-import type { ImageLayer, TransitionOptions } from "./types.ts";
 import { createProgramInfo, type ShaderProgramInfo } from "./shader.ts";
 import { TextureManager } from "./texture.ts";
+import type { ImageLayer, TransitionOptions } from "./types.ts";
 
 /**
  * Internal interface for transition backends (WebGL2 and CPU fallback).
@@ -92,14 +92,7 @@ class WebGLOpticalTransition implements TransitionBackend {
   private initQuadBuffer(): void {
     const gl = this.gl;
     const positions = new Float32Array([
-      0.0,
-      0.0,
-      1.0,
-      0.0,
-      0.0,
-      1.0,
-      1.0,
-      1.0,
+      0.0, 0.0, 1.0, 0.0, 0.0, 1.0, 1.0, 1.0,
     ]);
 
     this.vao = gl.createVertexArray();
@@ -194,9 +187,10 @@ class WebGLOpticalTransition implements TransitionBackend {
   } {
     return {
       currentLayerIndex: this.currentLayerIndex,
-      nextLayerIndex: this.currentLayerIndex + 1 < this.layers.length
-        ? this.currentLayerIndex + 1
-        : null,
+      nextLayerIndex:
+        this.currentLayerIndex + 1 < this.layers.length
+          ? this.currentLayerIndex + 1
+          : null,
       isPlaying: this.isPlaying,
     };
   }
@@ -266,10 +260,7 @@ class WebGLOpticalTransition implements TransitionBackend {
    * When isFinished=true, call setLayer() to start a new sequence.
    */
   public play(): void {
-    if (
-      this.isDestroyed || this.isPlaying ||
-      this.layers.length < 2
-    ) return;
+    if (this.isDestroyed || this.isPlaying || this.layers.length < 2) return;
 
     this.isPlaying = true;
     // pause時の進行状況から再開できるように調整
@@ -278,9 +269,7 @@ class WebGLOpticalTransition implements TransitionBackend {
   }
 
   public replay(): void {
-    if (
-      this.isDestroyed || this.layers.length === 0
-    ) {
+    if (this.isDestroyed || this.layers.length === 0) {
       return;
     }
 
@@ -307,8 +296,8 @@ class WebGLOpticalTransition implements TransitionBackend {
     const targetLayerIndex = this.currentLayerIndex + 1;
     const targetLayer = this.layers[targetLayerIndex];
     if (targetLayer) {
-      const elapsedSec = (performance.now() - this.transitionStartTime) /
-        1000.0;
+      const elapsedSec =
+        (performance.now() - this.transitionStartTime) / 1000.0;
       const durationSec = Math.max(0.001, targetLayer.duration);
       this.pausedProgress = Math.min(durationSec, Math.max(0, elapsedSec));
     }
@@ -650,9 +639,10 @@ class CpuOpticalTransition implements TransitionBackend {
   } {
     return {
       currentLayerIndex: this.currentLayerIndex,
-      nextLayerIndex: this.currentLayerIndex + 1 < this.layers.length
-        ? this.currentLayerIndex + 1
-        : null,
+      nextLayerIndex:
+        this.currentLayerIndex + 1 < this.layers.length
+          ? this.currentLayerIndex + 1
+          : null,
       isPlaying: this.isPlaying,
     };
   }
@@ -670,9 +660,7 @@ class CpuOpticalTransition implements TransitionBackend {
     canvas.height = this.height;
     const context = canvas.getContext("2d");
     if (!context) {
-      throw new Error(
-        "Failed to get Canvas 2D context for layer composition.",
-      );
+      throw new Error("Failed to get Canvas 2D context for layer composition.");
     }
     for (const image of layer.images) {
       const source = this.imageCache.get(image.url);
@@ -720,10 +708,7 @@ class CpuOpticalTransition implements TransitionBackend {
    * Resumes from the paused position if called after pause().
    */
   public play(): void {
-    if (
-      this.isDestroyed || this.isPlaying ||
-      this.layers.length < 2
-    ) return;
+    if (this.isDestroyed || this.isPlaying || this.layers.length < 2) return;
 
     this.isPlaying = true;
     // pause時の進行状況から再開できるように調整
@@ -736,9 +721,7 @@ class CpuOpticalTransition implements TransitionBackend {
    * Resets to the first layer and starts playing if multiple layers exist.
    */
   public replay(): void {
-    if (
-      this.isDestroyed || this.layers.length === 0
-    ) {
+    if (this.isDestroyed || this.layers.length === 0) {
       return;
     }
 
@@ -773,8 +756,8 @@ class CpuOpticalTransition implements TransitionBackend {
     const targetLayerIndex = this.currentLayerIndex + 1;
     const targetLayer = this.layers[targetLayerIndex];
     if (targetLayer) {
-      const elapsedSec = (performance.now() - this.transitionStartTime) /
-        1000.0;
+      const elapsedSec =
+        (performance.now() - this.transitionStartTime) / 1000.0;
       const durationSec = Math.max(0.001, targetLayer.duration);
       this.pausedProgress = Math.min(durationSec, Math.max(0, elapsedSec));
     }
@@ -940,12 +923,7 @@ class CpuOpticalTransition implements TransitionBackend {
       const startX = image.startX ?? 0;
       const startY = image.startY ?? 0;
       this.drawNoiseOverlay(
-        [
-          startX,
-          startY,
-          image.endX ?? this.width,
-          image.endY ?? this.height,
-        ],
+        [startX, startY, image.endX ?? this.width, image.endY ?? this.height],
         progress,
         nowMs,
       );

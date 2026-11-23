@@ -1,0 +1,27 @@
+{
+  "name": "optical-layer-transition",
+  "private": true,
+  "packageManager": "pnpm@10.34.6",
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "build": "pnpm -r build",
+    "test": "pnpm -r test",
+    "typecheck": "pnpm -r typecheck",
+    "lint": "biome check .",
+    "format": "biome check --write .",
+    "publish:jsr:dry": "pnpm --filter @sabakernel/optical-layer-transition exec jsr publish --dry-run",
+    "publish:jsr": "pnpm --filter @sabakernel/optical-layer-transition exec jsr publish",
+    "dev": "pnpm --filter demo dev"
+  },
+  "devDependencies": {
+    "@biomejs/biome": "^2.6.8",
+    "typescript": "~5.9.3"
+  },
+  "pnpm": {
+    "onlyBuiltDependencies": [
+      "esbuild"
+    ]
+  }
+}

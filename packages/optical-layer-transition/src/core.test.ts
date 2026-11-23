@@ -1,3 +1,4 @@
+import { test } from "vitest";
 import { OpticalTransition } from "./core.ts";
 import type { ImageLayer } from "./types.ts";
 
@@ -27,7 +28,7 @@ class LoadedImage {
   }
 }
 
-Deno.test("a layer composites multiple positioned images and transitions as one image", async () => {
+test("a layer composites multiple positioned images and transitions as one image", async () => {
   const originalImage = globalThis.Image;
   const originalDocument = globalThis.document;
   const originalRequestAnimationFrame = globalThis.requestAnimationFrame;
@@ -89,7 +90,7 @@ Deno.test("a layer composites multiple positioned images and transitions as one 
   const canvas = {
     width: 0,
     height: 0,
-    getContext: (kind: string) => kind === "webgl2" ? null : context,
+    getContext: (kind: string) => (kind === "webgl2" ? null : context),
   } as unknown as HTMLCanvasElement;
   const transition = new OpticalTransition({
     canvas,
@@ -136,11 +137,12 @@ Deno.test("a layer composites multiple positioned images and transitions as one 
     transition.play();
     const startTime = performance.now();
     runFrame(startTime + 1000);
-    const halfwayTarget = drawnCanvases.find((image) =>
-      image.id === compositeCanvases[1].id
+    const halfwayTarget = drawnCanvases.find(
+      (image) => image.id === compositeCanvases[1].id,
     );
     if (
-      !halfwayTarget || halfwayTarget.alpha < 0.45 ||
+      !halfwayTarget ||
+      halfwayTarget.alpha < 0.45 ||
       halfwayTarget.alpha > 0.55
     ) {
       throw new Error("The whole composite layer should transition at 50%.");
@@ -150,7 +152,8 @@ Deno.test("a layer composites multiple positioned images and transitions as one 
     const waiting = transition.getPlaybackState();
     if (
       waiting.isPlaying ||
-      waiting.currentLayerIndex !== 1 || waiting.nextLayerIndex !== null
+      waiting.currentLayerIndex !== 1 ||
+      waiting.nextLayerIndex !== null
     ) {
       throw new Error("Playback should wait on the final composite layer.");
     }

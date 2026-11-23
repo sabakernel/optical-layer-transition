@@ -410,7 +410,9 @@ h1 {
   cursor: pointer;
   font-size: 13px;
   font-weight: 700;
-  transition: background 140ms ease, color 140ms ease;
+  transition:
+    background 140ms ease,
+    color 140ms ease;
 }
 
 .play-button:hover:not(:disabled) {
@@ -427,7 +429,9 @@ h1 {
   color: #e7eee8;
   cursor: pointer;
   font-size: 11px;
-  transition: border-color 140ms ease, color 140ms ease;
+  transition:
+    border-color 140ms ease,
+    color 140ms ease;
 }
 
 .finish-button:hover:not(:disabled) {
@@ -460,7 +464,9 @@ h1 {
   color: #e7eee8;
   text-align: left;
   cursor: pointer;
-  transition: border-color 140ms ease, background 140ms ease;
+  transition:
+    border-color 140ms ease,
+    background 140ms ease;
 }
 
 .preset-option:hover {
@@ -521,7 +527,9 @@ h1 {
   cursor: pointer;
   font-family: var(--mono);
   font-size: 10px;
-  transition: border-color 140ms ease, background 140ms ease;
+  transition:
+    border-color 140ms ease,
+    background 140ms ease;
 }
 
 .size-option:hover,

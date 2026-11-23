@@ -11,7 +11,7 @@ WebGL2 が利用できない環境では、Canvas 2D の CPU フォールバッ�
 - WebGL2 と CPU フォールバックでのアルファ付き画像の重ね合わせ
 - 画像 URL を直接扱えるテクスチャロード機構
 - 明確な状態遷移を持つ再生キュー API
-- Deno + React + Vite で動くデモアプリ
+- React + Vite で動くデモアプリ(pnpm で実行)
 
 ## 設計思想
 
@@ -34,28 +34,41 @@ Layer B (シーン2)
 
 各レイヤー内の画像は透明背景上で指定位置に配置され、CPU側で1枚のテクスチャに事前合成されます。GPU側のトランジションシェーダーはこの合成済みテクスチャ間でノイズエフェクトを適用するため、シンプルかつ高速です。
 
-## インストール
+## 開発
 
-このプロジェクトはDenoで管理されています。Node.jsは不要です。
+このプロジェクトは pnpm ワークスペースで管理されています。ライブラリのビルドには tsdown、テストには Vitest、フォーマット・リントには Biome を使用しています。
 
 ```bash
-deno task check
+pnpm install
+pnpm typecheck   # tsc --noEmit
+pnpm lint        # biome check
+pnpm test        # vitest
+pnpm build       # tsdown(dist/ に ESM + 型定義を出力)
 ```
 
 ## 開発実行
 
 ```bash
-cd demo
-deno task dev
+pnpm dev         # または cd demo && pnpm dev
 ```
 
 ## ビルド
 
 ```bash
-cd demo
-deno task build
-deno task preview  # ビルド結果のプレビュー
+pnpm build
+pnpm --filter demo preview  # ビルド結果のプレビュー
 ```
+
+## JSR 公開
+
+ライブラリは JSR(`@sabakernel/optical-layer-transition`)に TypeScript ソースのまま公開されます。設定は `packages/optical-layer-transition/jsr.json` にあります。
+
+```bash
+pnpm publish:jsr:dry  # jsr publish --dry-run
+pnpm publish:jsr      # jsr publish
+```
+
+`main` ブランチへの `ci` ワークフロー成功後、`.github/workflows/publish-jsr.yml` が自動で公開します。
 
 ## 使い方
 
@@ -90,13 +103,15 @@ await transition.setLayer({
 });
 
 await transition.setLayer({
-  images: [{
-    url: "/images/next-scene.jpg",
-    startX: 0,
-    startY: 0,
-    endX: 1280,
-    endY: 720,
-  }],
+  images: [
+    {
+      url: "/images/next-scene.jpg",
+      startX: 0,
+      startY: 0,
+      endX: 1280,
+      endY: 720,
+    },
+  ],
   duration: 1.8,
 });
 
@@ -179,9 +194,9 @@ console.log(transition.mode); // "webgl2" or "cpu"
 
 ```ts
 type PlaybackState = {
-  currentLayerIndex: number;      // 現在表示中のレイヤーインデックス
-  nextLayerIndex: number | null;  // 次に遷移するレイヤーインデックス（nullなら最後）
-  isPlaying: boolean;             // 遷移アニメーション再生中か
+  currentLayerIndex: number; // 現在表示中のレイヤーインデックス
+  nextLayerIndex: number | null; // 次に遷移するレイヤーインデックス（nullなら最後）
+  isPlaying: boolean; // 遷移アニメーション再生中か
 };
 ```
 
@@ -258,6 +273,7 @@ transition.play();
 ```
 
 **条件:**
+
 - `play()` は `isPlaying === true` または `layers.length < 2` の場合は無視されます
 - Pause中の場合、`play()` で中断位置から再開します
 
@@ -315,6 +331,7 @@ await transition.setLayer({
 ```
 
 内部処理：
+
 1. 全画像を非同期で読み込み
 2. 透明キャンバスを作成
 3. 各画像を指定座標に順番に描画（アルファ合成）
@@ -327,7 +344,7 @@ GPU側の遷移はこの合成済みテクスチャ全体に対して適用さ�
 
 ```
 .
-├── demo/                  # Deno + React + Vite デモアプリ
+├── demo/                  # React + Vite デモアプリ
 │   ├── src/
 │   │   ├── components/
 │   │   │   └── TransitionDemo.tsx
@@ -335,18 +352,21 @@ GPU側の遷移はこの合成済みテクスチャ全体に対して適用さ�
 │   │   ├── App.css
 │   │   └── main.tsx
 │   ├── index.html
-│   ├── vite.config.ts
-│   └── deno.json
-├── src/                   # ライブラリ本体
-│   ├── core.ts            # メインレンダラと状態管理
-│   ├── shader.ts          # WebGL シェーダー
-│   ├── texture.ts         # テクスチャ読み込み・キャッシュ
-│   ├── core_test.ts       # テスト
-│   └── types.ts           # 型定義
-├── mod.ts                 # 公開エントリ
-├── deno.json              # Deno 設定
-├── README.md              # このファイル
-└── deno.lock
+│   └── vite.config.ts
+├── packages/optical-layer-transition/  # ライブラリ本体系
+│   ├── src/
+│   │   ├── core.ts            # メインレンダラと状態管理
+│   │   ├── shader.ts          # WebGL シェーダー
+│   │   ├── texture.ts         # テクスチャ読み込み・キャッシュ
+│   │   ├── core.test.ts       # テスト
+│   │   └── types.ts           # 型定義
+│   ├── mod.ts                 # 公開エントリ
+│   ├── jsr.json               # JSR 公開設定
+│   ├── tsdown.config.ts       # ビルド設定
+│   └── package.json
+├── biome.json               # フォーマット・リント設定
+├── pnpm-workspace.yaml
+└── README.md                # このファイル
 ```
 
 ## 設計の利点
