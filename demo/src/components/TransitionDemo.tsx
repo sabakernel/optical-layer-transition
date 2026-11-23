@@ -1,9 +1,9 @@
-import { useEffect, useRef, useState } from "react";
-import { OpticalTransition } from "@sabakernel/optical-layer-transition";
 import type {
   ImageLayer,
   LayerImage,
 } from "@sabakernel/optical-layer-transition";
+import { OpticalTransition } from "@sabakernel/optical-layer-transition";
+import { useEffect, useRef, useState } from "react";
 
 type SampleImage = {
   name: string;
@@ -100,8 +100,8 @@ export default function TransitionDemo() {
   const [nextLayerIndex, setNextLayerIndex] = useState<number | null>(null);
   const [error, setError] = useState("");
   const [queueNotice, setQueueNotice] = useState("");
-  const isWaitingAtEnd = !isPlaying && layers.length > 0 &&
-    nextLayerIndex === null;
+  const isWaitingAtEnd =
+    !isPlaying && layers.length > 0 && nextLayerIndex === null;
 
   useEffect(() => {
     samplesRef.current = SAMPLES.map((sample) => ({
@@ -254,14 +254,20 @@ export default function TransitionDemo() {
       <div className="stage-column">
         <div className="stage-heading">
           <span className="section-kicker">CANVAS · {mode.toUpperCase()}</span>
-          <span className="resolution-label">{size.width} × {size.height}</span>
+          <span className="resolution-label">
+            {size.width} × {size.height}
+          </span>
         </div>
         <div
           className="stage-frame"
           style={{ aspectRatio: `${size.width} / ${size.height}` }}
         >
           <canvas ref={canvasRef} aria-label="Noise transition canvas" />
-          {error && <div className="stage-error" role="alert">{error}</div>}
+          {error && (
+            <div className="stage-error" role="alert">
+              {error}
+            </div>
+          )}
         </div>
       </div>
 
@@ -275,7 +281,8 @@ export default function TransitionDemo() {
               min="1"
               value={size.width}
               onInput={(event) =>
-                resize("width", Number(event.currentTarget.value))}
+                resize("width", Number(event.currentTarget.value))
+              }
             />
           </label>
           <label className="field">
@@ -285,7 +292,8 @@ export default function TransitionDemo() {
               min="1"
               value={size.height}
               onInput={(event) =>
-                resize("height", Number(event.currentTarget.value))}
+                resize("height", Number(event.currentTarget.value))
+              }
             />
           </label>
         </div>
@@ -297,10 +305,13 @@ export default function TransitionDemo() {
             <select
               value={selectedSample}
               onChange={(event) =>
-                setSelectedSample(Number(event.currentTarget.value))}
+                setSelectedSample(Number(event.currentTarget.value))
+              }
             >
               {SAMPLES.map((sample, index) => (
-                <option key={index} value={index}>{sample.name}</option>
+                <option key={index} value={index}>
+                  {sample.name}
+                </option>
               ))}
             </select>
           </label>
@@ -310,8 +321,7 @@ export default function TransitionDemo() {
               <input
                 type="number"
                 value={x}
-                onInput={(event) =>
-                  setX(Number(event.currentTarget.value))}
+                onInput={(event) => setX(Number(event.currentTarget.value))}
               />
             </label>
             <label className="field">
@@ -319,8 +329,7 @@ export default function TransitionDemo() {
               <input
                 type="number"
                 value={y}
-                onInput={(event) =>
-                  setY(Number(event.currentTarget.value))}
+                onInput={(event) => setY(Number(event.currentTarget.value))}
               />
             </label>
           </div>
@@ -340,9 +349,10 @@ export default function TransitionDemo() {
             <>
               <ol className="layer-list" aria-label="Images in draft layer">
                 {draftImages.map((image, index) => {
-                  const name = samplesRef.current.find((sample) =>
-                    sample.url === image.url
-                  )?.name ?? "Image";
+                  const name =
+                    samplesRef.current.find(
+                      (sample) => sample.url === image.url,
+                    )?.name ?? "Image";
                   return (
                     <li className="layer-item" key={`draft-image-${index}`}>
                       <span className="layer-item-title">
@@ -356,10 +366,11 @@ export default function TransitionDemo() {
                         type="button"
                         onClick={() =>
                           setDraftImages((images) =>
-                            images.filter((_, imageIndex) =>
-                              imageIndex !== index
-                            )
-                          )}
+                            images.filter(
+                              (_, imageIndex) => imageIndex !== index,
+                            ),
+                          )
+                        }
                         disabled={isAddingLayer}
                       >
                         Remove image
@@ -386,7 +397,8 @@ export default function TransitionDemo() {
               step="0.1"
               value={duration}
               onInput={(event) =>
-                setDuration(Math.max(0.1, Number(event.currentTarget.value)))}
+                setDuration(Math.max(0.1, Number(event.currentTarget.value)))
+              }
             />
           </label>
           <label className="checkbox-field">
@@ -394,7 +406,8 @@ export default function TransitionDemo() {
               type="checkbox"
               checked={clearAfterRender}
               onChange={(event) =>
-                setClearAfterRender(event.currentTarget.checked)}
+                setClearAfterRender(event.currentTarget.checked)
+              }
             />
             Clear after transition
           </label>
@@ -407,12 +420,14 @@ export default function TransitionDemo() {
             {isAddingLayer
               ? "Compositing layer…"
               : isPlaying
-              ? "Add layer to queue (playing)"
-              : "Add layer to playback queue"}
+                ? "Add layer to queue (playing)"
+                : "Add layer to playback queue"}
           </button>
           <p className="layer-count">PLAYBACK QUEUE</p>
           {queueNotice && (
-            <p className="layer-count" role="status">{queueNotice}</p>
+            <p className="layer-count" role="status">
+              {queueNotice}
+            </p>
           )}
           {isWaitingAtEnd && (
             <p className="layer-count">
@@ -448,17 +463,21 @@ export default function TransitionDemo() {
                     {layer.images.length === 1 ? "" : "s"}
                   </span>
                   <span className="layer-item-meta">
-                    {layer.images.map((image) => {
-                      const name = samplesRef.current.find((sample) =>
-                        sample.url === image.url
-                      )?.name ?? "Image";
-                      return `${name} (x:${image.startX ?? 0}, y:${
-                        image.startY ?? 0
-                      })`;
-                    }).join(" · ")}
+                    {layer.images
+                      .map((image) => {
+                        const name =
+                          samplesRef.current.find(
+                            (sample) => sample.url === image.url,
+                          )?.name ?? "Image";
+                        return `${name} (x:${image.startX ?? 0}, y:${
+                          image.startY ?? 0
+                        })`;
+                      })
+                      .join(" · ")}
                   </span>
                   <span className="layer-item-meta">
-                    {layer.duration}s · {layer.clearAfterRender
+                    {layer.duration}s ·{" "}
+                    {layer.clearAfterRender
                       ? "Clears after transition"
                       : "Keeps rendered layer"}
                   </span>

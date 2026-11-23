@@ -14,13 +14,16 @@ jobs:
     steps:
       - uses: actions/checkout@v6
 
-      - uses: denoland/setup-deno@v2
-        with:
-          deno-version: v2.x
-          cache: true
+      - uses: pnpm/action-setup@v4
 
-      - run: deno task fmt --check
-      - run: deno task lint
-      - run: deno ci
-      - run: deno check mod.ts --frozen
-      - run: deno test -A --frozen
+      - uses: actions/setup-node@v6
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - run: pnpm install --frozen-lockfile
+
+      - run: pnpm lint
+      - run: pnpm typecheck
+      - run: pnpm test
+      - run: pnpm --filter demo build

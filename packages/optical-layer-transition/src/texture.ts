@@ -37,9 +37,7 @@ export class TextureManager {
     canvas.height = height;
     const context = canvas.getContext("2d");
     if (!context) {
-      throw new Error(
-        "Failed to get Canvas 2D context for layer composition.",
-      );
+      throw new Error("Failed to get Canvas 2D context for layer composition.");
     }
 
     const loadedImages = await Promise.all(

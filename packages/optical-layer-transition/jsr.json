@@ -1,0 +1,11 @@
+{
+  "name": "@sabakernel/optical-layer-transition",
+  "version": "1.2.0",
+  "exports": {
+    ".": "./mod.ts"
+  },
+  "publish": {
+    "include": ["src/", "jsr.json", "mod.ts", "README.md", "LICENSE"],
+    "exclude": ["node_modules/"]
+  }
+}

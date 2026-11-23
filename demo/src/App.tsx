@@ -9,7 +9,9 @@ export default function App() {
           href="/"
           aria-label="Optical Noise Transition home"
         >
-          <span className="wordmark-mark" aria-hidden="true">ON</span>
+          <span className="wordmark-mark" aria-hidden="true">
+            ON
+          </span>
           <span>Optical Noise</span>
         </a>
         <span className="engine-label">

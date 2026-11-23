@@ -1,0 +1,44 @@
+name: publish-jsr
+
+on:
+  push:
+    tags:
+      - "v*"
+
+permissions:
+  contents: read
+  id-token: write
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v6
+
+      - uses: pnpm/action-setup@v4
+
+      - uses: actions/setup-node@v6
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - run: pnpm install --frozen-lockfile
+
+      - name: Verify tag matches package version
+        run: |
+          for file in packages/optical-layer-transition/jsr.json packages/optical-layer-transition/package.json; do
+            version=$(node -p "require('./$file').version")
+            if [ "$version" != "${GITHUB_REF_NAME#v}" ]; then
+              echo "Version mismatch: $file ($version) != ${GITHUB_REF_NAME}"
+              exit 1
+            fi
+          done
+
+      - name: Check publish
+        working-directory: packages/optical-layer-transition
+        run: pnpm exec jsr publish --dry-run
+
+      - name: Publish to JSR
+        working-directory: packages/optical-layer-transition
+        run: pnpm exec jsr publish
