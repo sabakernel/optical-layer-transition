@@ -1,6 +1,6 @@
 {
   "name": "@sabakernel/optical-layer-transition",
-  "version": "1.1.0",
+  "version": "1.2.0",
   "private": true,
   "description": "WebGL2-powered optical layer transition renderer for progressive image updates",
   "license": "MIT",

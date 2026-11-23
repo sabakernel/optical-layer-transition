@@ -1,8 +1,10 @@
 # @sabakernel/optical-layer-transition
 
-WebGL 2.0 ベースの画像遷移エンジン。複数の画像をレイヤーとして重ね、粒子状ノイズで滑らかに切り替えます。WebGL2 が利用できない環境では Canvas 2D の CPU フォールバックへ自動切り替わります。
+A WebGL 2.0-powered image transition engine. It composites multiple images as layers and blends them with an optical particle-noise effect. When WebGL 2.0 is unavailable, it automatically falls back to Canvas 2D (CPU) rendering.
 
-詳細は[リポジトリの README](https://github.com/sabakernel/optical-layer-transition)を参照してください。
+See the [repository README](https://github.com/sabakernel/optical-layer-transition) for full documentation.
+
+## Usage
 
 ```ts
 import { OpticalTransition } from "@sabakernel/optical-layer-transition";

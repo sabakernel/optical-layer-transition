@@ -68,7 +68,7 @@ pnpm publish:jsr:dry  # jsr publish --dry-run
 pnpm publish:jsr      # jsr publish
 ```
 
-`main` ブランチへの `ci` ワークフロー成功後、`.github/workflows/publish-jsr.yml` が自動で公開します。
+`v` から始まるタグ(例: `v1.2.0`)を push すると、`.github/workflows/publish-jsr.yml` がタグと `jsr.json` / `package.json` のバージョン一致を確認した上で自動公開します。
 
 ## 使い方
 
